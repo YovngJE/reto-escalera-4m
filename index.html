@@ -180,7 +180,7 @@
 
         <!-- Strategy Section --><section class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="col-span-1 md:col-span-3">
-                <h2 class="text-2xl font-bold text-stone-900 mb-2">Tácticas para Cuota <span id="tacticOddsDisplay">1.50</span></h2>
+                <h2 class="text-2xl font-bold text-stone-900">Tácticas para Cuota <span id="tacticOddsDisplay">1.50</span></h2>
                 <p class="text-stone-600">Para lograr 13 aciertos seguidos, la selección del mercado es crítica. Busca estas oportunidades:</p>
             </div>
 
@@ -353,7 +353,11 @@
         async function initFirebase() {
             if (!firebaseConfig || !firebaseConfig.apiKey) {
                 console.error("Firebase config not available. Persistence disabled.");
-                isAuthReady = true; // Mark as ready even if disabled
+                isAuthReady = true; 
+                
+                // CRITICAL FIX: Render default data if Firebase is unavailable.
+                currentData = calculateNewData(); 
+                renderAll(); 
                 return;
             }
 
@@ -376,7 +380,10 @@
                 loadPersistenceData(); // Load all persistent data (completion status, odds, initial amount, plan B)
             } catch (error) {
                 console.error("Firebase initialization or sign-in failed:", error);
-                isAuthReady = true; // Still mark as ready to allow the rest of the app to function
+                isAuthReady = true; 
+                // Fallback render if Firebase fails after sign-in attempt
+                currentData = calculateNewData(); 
+                renderAll(); 
             }
         }
 
@@ -412,6 +419,9 @@
                 renderAll(); 
             }, (error) => {
                 console.error("Error loading persistence data:", error);
+                // Fallback in case onSnapshot fails after initial successful auth
+                currentData = calculateNewData(); 
+                renderAll();
             });
         }
 
@@ -735,9 +745,8 @@
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            initFirebase();
             initChart(); // Initialize chart immediately with default/loaded data
-            // renderAll is called by loadPersistenceData once authenticated and data is ready
+            initFirebase(); // initFirebase now handles the first render, even if it fails.
         });
     </script>
 </body>
