@@ -16,6 +16,7 @@
             height: 350px;
             margin: 0 auto;
         }
+        /* Custom styling for sliders */
         input[type=range] {
             -webkit-appearance: none; 
             background: transparent; 
@@ -25,7 +26,7 @@
             height: 24px;
             width: 24px;
             border-radius: 50%;
-            background: #059669;
+            background: #059669; /* emerald-600 */
             cursor: pointer;
             margin-top: -10px; 
             box-shadow: 0 0 2px rgba(0,0,0,0.5);
@@ -37,38 +38,18 @@
             background: #e5e7eb;
             border-radius: 2px;
         }
-        .step-card.active {
-            border-color: #059669;
-            background-color: #ecfdf5;
+
+        /* Confetti Pulse Animation */
+        @keyframes pulse-confetti {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); box-shadow: 0 0 20px rgba(5, 150, 105, 0.8); }
+        }
+        .confetti-pulse {
+            animation: pulse-confetti 2s infinite ease-in-out;
         }
     </style>
 </head>
 <body class="bg-stone-50 text-stone-800">
-
-    <!-- Chosen Palette: Warm Neutrals with Emerald Green Accents. 
-         Background: Stone-50 (Calm). 
-         Primary: Emerald-600 (Money/Success). 
-         Secondary: Slate-800 (Text). 
-         Accent: Amber-500 (Warnings/Tips). -->
-
-    <!-- Application Structure Plan: 
-         1. Hero Section: Immediate summary of the goal (20k -> 4M) and timeline.
-         2. Interactive Simulator (The Core): A dashboard with a slider to move through the days/steps. 
-            This allows the user to feel the progression and see the numbers grow.
-            Includes a "Plan B" toggle to visualize the risk management strategy mentioned in the report.
-         3. Visual Analytics: A Chart.js Line chart showing the exponential growth curve.
-         4. Strategy Tactics: Cards explaining HOW to achieve the 1.50 odds (Goles, Doble Oportunidad).
-         5. Data Reference: The full CSV data presented as a clean table.
-         This structure moves from "Big Picture" -> "Interactive Play" -> "Tactical Advice" -> "Raw Data". -->
-
-    <!-- Visualization & Content Choices:
-         - Growth Chart (Line): Shows the exponential nature of the strategy. Best for showing "Money vs Time".
-         - Step Simulator: Allows user to isolate specific days and see the requirement for that specific moment.
-         - Strategy Cards: Breaks down the text advice into digestible chunks.
-         - Plan B Toggle: Directly addresses the "Gestión de Riesgo" section, allowing comparison between strategies.
-         - NO SVG / NO Mermaid: All icons are Unicode or CSS shapes. Charts are Canvas. -->
-
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 
     <!-- Navbar -->
     <nav class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-50">
@@ -95,13 +76,19 @@
             </h1>
             <p class="text-lg text-stone-600 leading-relaxed">
                 Este panel interactivo visualiza tu plan de <strong>Interés Compuesto</strong>. 
-                Necesitas acertar <strong>13 apuestas consecutivas</strong> con cuota promedio de <strong>1.50</strong>. 
+                Necesitas acertar <strong>13 apuestas consecutivas</strong> con cuota promedio de <span id="currentOddsDisplay" class="font-bold text-blue-600">1.50</span>. 
                 Usa el simulador abajo para ver tu progreso proyectado día a día.
             </p>
             <div class="flex justify-center gap-4 text-sm font-semibold">
-                <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">Cuota: 1.50</span>
-                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">Duración: 24 Días</span>
-                <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full">Riesgo: Alto</span>
+                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">Días: 24</span>
+                
+                <!-- Win Streak Badge (Visible when streak < 13) -->
+                <span id="winStreakBadge" class="bg-red-100 text-red-800 px-3 py-1 rounded-full transition-colors">Racha Actual: 0</span>
+
+                <!-- Celebration Message (Visible when streak >= 13) -->
+                <div id="winGoalCelebration" class="hidden bg-emerald-600 text-white px-4 py-1 rounded-full shadow-lg confetti-pulse">
+                    <span class="font-extrabold text-lg">🎉 ¡META CUMPLIDA! 4M 🎉</span>
+                </div>
             </div>
         </section>
 
@@ -111,7 +98,7 @@
                 <h2 class="text-2xl font-bold mb-2 flex items-center gap-2">
                     <span>🎛️</span> Simulador de Proyección
                 </h2>
-                <p class="text-stone-400 text-sm">Ajusta el paso actual y activa el "Plan B" para ver cómo cambia tu estrategia de retiro.</p>
+                <p class="text-stone-400 text-sm">Ajusta la cuota y el paso actual para ver cómo cambia tu estrategia de retiro y el crecimiento.</p>
             </div>
 
             <div class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -119,7 +106,16 @@
                 <!-- Controls Side -->
                 <div class="lg:col-span-5 space-y-8">
                     
-                    <!-- Slider Control -->
+                    <!-- Odds Control -->
+                    <div class="space-y-4 pt-2">
+                        <div class="flex justify-between items-end">
+                            <label class="font-bold text-stone-700">Cuota Base: <span id="oddsValueDisplay" class="text-blue-600 text-2xl">1.50</span></label>
+                            <span class="text-stone-500 font-mono text-sm">1.10 a 2.00</span>
+                        </div>
+                        <input type="range" id="oddsSlider" min="1.10" max="2.00" value="1.50" step="0.05" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Step Slider Control -->
                     <div class="space-y-4">
                         <div class="flex justify-between items-end">
                             <label class="font-bold text-stone-700">Paso Actual: <span id="stepDisplay" class="text-emerald-600 text-2xl">1</span>/14</label>
@@ -179,7 +175,7 @@
         <!-- Strategy Section -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="col-span-1 md:col-span-3">
-                <h2 class="text-2xl font-bold text-stone-900 mb-2">Tácticas para Cuota 1.50</h2>
+                <h2 class="text-2xl font-bold text-stone-900 mb-2">Tácticas para Cuota <span id="tacticOddsDisplay">1.50</span></h2>
                 <p class="text-stone-600">Para lograr 13 aciertos seguidos, la selección del mercado es crítica. Busca estas oportunidades:</p>
             </div>
 
@@ -224,6 +220,7 @@
                             <th class="px-6 py-3 text-center text-xs font-medium text-stone-500 uppercase tracking-wider">Cuota</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-stone-500 uppercase tracking-wider">Ganancia</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-stone-500 uppercase tracking-wider">Saldo Final</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-stone-500 uppercase tracking-wider">Cumplido</th> <!-- New Header -->
                         </tr>
                     </thead>
                     <tbody id="dataTableBody" class="bg-white divide-y divide-stone-200">
@@ -239,61 +236,254 @@
 
     </main>
 
-    <script>
+    <script type="module">
+        // --- Firebase Setup (Persistence) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let db;
+        let auth;
+        let userId = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        
         // --- Data Configuration ---
-        // Base data from the report
-        const baseData = [
-            { step: 1, date: '26-Nov', start: 20000, bet: 20000, odds: 1.50, profit: 10000, end: 30000 },
-            { step: 2, date: '28-Nov', start: 30000, bet: 30000, odds: 1.50, profit: 15000, end: 45000 },
-            { step: 3, date: '30-Nov', start: 45000, bet: 45000, odds: 1.50, profit: 22500, end: 67500 },
-            { step: 4, date: '02-Dic', start: 67500, bet: 67500, odds: 1.50, profit: 33750, end: 101250 },
-            { step: 5, date: '04-Dic', start: 101250, bet: 101250, odds: 1.50, profit: 50625, end: 151875 },
-            { step: 6, date: '06-Dic', start: 151875, bet: 151875, odds: 1.50, profit: 75938, end: 227813 },
-            { step: 7, date: '08-Dic', start: 227813, bet: 227813, odds: 1.50, profit: 113906, end: 341719 },
-            { step: 8, date: '10-Dic', start: 341719, bet: 341719, odds: 1.50, profit: 170859, end: 512578 },
-            { step: 9, date: '12-Dic', start: 512578, bet: 512578, odds: 1.50, profit: 256289, end: 768867 },
-            { step: 10, date: '14-Dic', start: 768867, bet: 768867, odds: 1.50, profit: 384434, end: 1153301 },
-            { step: 11, date: '16-Dic', start: 1153301, bet: 1153301, odds: 1.50, profit: 576650, end: 1729951 },
-            { step: 12, date: '18-Dic', start: 1729951, bet: 1729951, odds: 1.50, profit: 864976, end: 2594927 },
-            { step: 13, date: '19-Dic', start: 2594927, bet: 2594927, odds: 1.50, profit: 1297463, end: 3892390 },
-            { step: 14, date: '20-Dic', start: 3892390, bet: 3892390, odds: 1.50, profit: 1946195, end: 5838585 }
+        // Original data array only needs to define the start point and structure
+        const initialDataStructure = [
+            { step: 1, date: '26-Nov', start: 20000 },
+            { step: 2, date: '28-Nov', start: 0 },
+            { step: 3, date: '30-Nov', start: 0 },
+            { step: 4, date: '02-Dic', start: 0 },
+            { step: 5, date: '04-Dic', start: 0 },
+            { step: 6, date: '06-Dic', start: 0 },
+            { step: 7, date: '08-Dic', start: 0 },
+            { step: 8, date: '10-Dic', start: 0 },
+            { step: 9, date: '12-Dic', start: 0 },
+            { step: 10, date: '14-Dic', start: 0 },
+            { step: 11, date: '16-Dic', start: 0 },
+            { step: 12, date: '18-Dic', start: 0 },
+            { step: 13, date: '19-Dic', start: 0 },
+            { step: 14, date: '20-Dic', start: 0 }
         ];
 
         // State variables
-        let currentData = [...baseData];
+        let currentData = [];
+        let baseOdds = 1.50; // New dynamic odds state
         let isPlanB = false;
         let chartInstance = null;
+        let completionStatus = {}; // { 1: true, 2: false, ... }
+        let isAuthReady = false;
+
+        // Exposed functions for inline events
+        window.toggleStepCompletion = toggleStepCompletion;
+        window.copyTable = copyTable;
 
         // --- Core Logic ---
-
-        function calculatePlanB() {
-            // Plan B Logic:
-            // Steps 1-10 are same.
-            // At end of Step 10, we have 1,153,301.
-            // We withdraw 153,301 (approx) to keep 1,000,000 flat for Step 11.
-            // We continue compounding from 1,000,000.
-            
-            const newData = JSON.parse(JSON.stringify(baseData)); // Deep copy
-            
-            // Recalculate from step 11 onwards
-            let currentBalance = 1000000; // Reset balance after withdrawal at step 10
-            
-            for (let i = 10; i < newData.length; i++) { // Index 10 is Step 11
-                newData[i].start = currentBalance;
-                newData[i].bet = currentBalance;
-                newData[i].profit = currentBalance * 0.5; // (1.50 - 1)
-                newData[i].end = currentBalance + newData[i].profit;
-                currentBalance = newData[i].end;
-            }
-            
-            return newData;
-        }
 
         function formatCurrency(val) {
             return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
         }
+        
+        /**
+         * Recalcula toda la tabla de la escalera basándose en la cuota base y el Plan B.
+         * @returns {Array} La nueva estructura de datos de la escalera.
+         */
+        function calculateNewData() {
+            const newData = JSON.parse(JSON.stringify(initialDataStructure)); // Deep copy
+            let currentBalance = newData[0].start;
+
+            for (let i = 0; i < newData.length; i++) {
+                const step = newData[i];
+                
+                // Si no es el primer paso, toma el saldo final del paso anterior como saldo inicial
+                if (i > 0) {
+                    currentBalance = newData[i - 1].end;
+                    step.start = currentBalance;
+                }
+
+                // Aplicar Plan B en el Paso 10 (índice 9)
+                if (isPlanB && step.step === 10) {
+                    // Check if the previous step was completed to calculate the correct withdrawal base
+                    const previousStepEnd = i > 0 ? newData[i - 1].end : step.start;
+                    const endBeforeWithdrawal = previousStepEnd * baseOdds;
+                    
+                    const withdrawalAmount = endBeforeWithdrawal - 1000000;
+                    step.withdrawal = withdrawalAmount > 0 ? withdrawalAmount : 0; // Save withdrawal amount
+                    currentBalance = 1000000; // Reset balance for the next step (Step 11)
+                    step.bet = previousStepEnd; // Bet amount is always the starting balance of the step
+                    step.profit = step.bet * (baseOdds - 1);
+                    step.end = currentBalance; // Balance after withdrawal
+                    
+                    // Force re-calculation for Step 10 display:
+                    step.bet = previousStepEnd;
+                    step.profit = step.bet * (baseOdds - 1);
+                    step.end = step.bet + step.profit; // The end amount *before* withdrawal
+                    
+                    // The actual balance for the next step (index 10) will be 1M
+                } else {
+                    // Normal step calculation
+                    const bet = currentBalance;
+                    const profit = bet * (baseOdds - 1);
+                    const end = currentBalance + profit;
+
+                    step.bet = bet;
+                    step.odds = baseOdds;
+                    step.profit = profit;
+                    step.end = end;
+                }
+            }
+            
+            // Recalculate balances starting from Step 11 if Plan B is active
+            if (isPlanB) {
+                // The balance for the start of step 11 (index 10) is fixed at 1,000,000
+                let currentBalanceAfterPlanB = 1000000; 
+
+                for (let i = 10; i < newData.length; i++) {
+                    const step = newData[i];
+                    step.start = currentBalanceAfterPlanB;
+                    step.bet = currentBalanceAfterPlanB;
+                    step.profit = currentBalanceAfterPlanB * (baseOdds - 1);
+                    step.end = currentBalanceAfterPlanB + step.profit;
+                    currentBalanceAfterPlanB = step.end;
+                }
+            }
+
+
+            return newData;
+        }
+
+        /**
+         * Calcula la racha actual de aciertos consecutivos.
+         */
+        function calculateWinStreak() {
+            let streak = 0;
+            // Iterate from the first step upwards
+            for (let i = 1; i <= initialDataStructure.length; i++) {
+                if (completionStatus[i]) {
+                    streak++;
+                } else {
+                    // If a step is incomplete, the streak is broken here.
+                    break;
+                }
+            }
+            return streak;
+        }
+
+        // --- Persistence Logic ---
+        async function initFirebase() {
+            if (!firebaseConfig || !firebaseConfig.apiKey) {
+                console.error("Firebase config not available. Persistence disabled.");
+                isAuthReady = true; // Mark as ready even if disabled
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                const __initial_auth_token = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : '';
+                
+                if (__initial_auth_token) { 
+                    await signInWithCustomToken(auth, __initial_auth_token); 
+                } else { 
+                    await signInAnonymously(auth); 
+                }
+                
+                userId = auth.currentUser?.uid;
+                isAuthReady = true;
+                
+                loadCompletionStatus(); // Start listening to data
+            } catch (error) {
+                console.error("Firebase initialization or sign-in failed:", error);
+                isAuthReady = true; // Still mark as ready to allow the rest of the app to function
+            }
+        }
+
+        const getCompletionDocRef = () => doc(db, `artifacts/${appId}/users/${userId}/ladder_metadata`, 'completions');
+
+        function loadCompletionStatus() {
+            if (!db || !userId) return;
+
+            onSnapshot(getCompletionDocRef(), (docSnap) => {
+                if (docSnap.exists()) {
+                    completionStatus = docSnap.data().status || {};
+                } else {
+                    completionStatus = {};
+                }
+                // Update UI when data is loaded/updated
+                currentData = calculateNewData(); // Recalculate data when persistence status changes
+                renderAll(); 
+            }, (error) => {
+                console.error("Error loading completion status:", error);
+            });
+        }
+
+        async function saveCompletionStatus() {
+            if (!db || !userId) {
+                console.warn("Persistence not available. Cannot save status.");
+                return;
+            }
+
+            try {
+                await setDoc(getCompletionDocRef(), { status: completionStatus }, { merge: true });
+            } catch (error) {
+                console.error("Error saving completion status:", error);
+            }
+        }
+
+        function toggleStepCompletion(stepId) {
+            // Ensure stepId is number
+            stepId = parseInt(stepId);
+            
+            // Allow checking/unchecking any step for flexibility, removing strict ladder constraint
+            const isCompleted = !!completionStatus[stepId];
+            completionStatus[stepId] = !isCompleted;
+            saveCompletionStatus(); // Save and let onSnapshot trigger renderAll
+        }
+
 
         // --- UI Updates ---
+        function renderAll() {
+            renderTable();
+            // Re-run dashboard update to ensure highlight is correct
+            const slider = document.getElementById('stepSlider');
+            const index = parseInt(slider.value) - 1;
+            updateDashboard(index); 
+            // Chart update
+            updateChartData();
+            // Update win streak badge
+            updateWinStreakBadge();
+            // Update odds displays
+            document.getElementById('currentOddsDisplay').textContent = baseOdds.toFixed(2);
+            document.getElementById('tacticOddsDisplay').textContent = baseOdds.toFixed(2);
+        }
+
+        function updateWinStreakBadge() {
+            const streak = calculateWinStreak();
+            const badge = document.getElementById('winStreakBadge');
+            const celebration = document.getElementById('winGoalCelebration');
+            const totalSteps = initialDataStructure.length;
+            
+            if (streak >= totalSteps - 1) { // 13 steps is the goal (14 total, step 14 is final balance display)
+                badge.classList.add('hidden');
+                celebration.classList.remove('hidden');
+            } else {
+                badge.classList.remove('hidden');
+                celebration.classList.add('hidden');
+
+                badge.textContent = `Racha Actual: ${streak}`;
+                
+                if (streak > 0) {
+                    badge.classList.remove('bg-red-100', 'text-red-800');
+                    badge.classList.add('bg-emerald-100', 'text-emerald-800');
+                } else {
+                    badge.classList.remove('bg-emerald-100', 'text-emerald-800');
+                    badge.classList.add('bg-red-100', 'text-red-800');
+                }
+            }
+        }
 
         function updateDashboard(stepIndex) {
             const dataPoint = currentData[stepIndex];
@@ -303,27 +493,47 @@
             document.getElementById('dateDisplay').textContent = dataPoint.date;
             document.getElementById('betAmountDisplay').textContent = formatCurrency(dataPoint.bet);
             document.getElementById('profitDisplay').textContent = formatCurrency(dataPoint.profit);
-            document.getElementById('totalBalanceDisplay').textContent = formatCurrency(dataPoint.end);
+            
+            let finalBalance = dataPoint.end;
+            let note = '';
+            
+            // Adjust display for Plan B withdrawal step (Step 10, index 9)
+            if (isPlanB && dataPoint.step === 10) {
+                // The 'end' property holds the balance before withdrawal for display purposes in this function
+                note = ` (Antes de Retiro: ${formatCurrency(dataPoint.withdrawal)})`;
+            }
+            
+            document.getElementById('totalBalanceDisplay').innerHTML = `${formatCurrency(finalBalance)}<span class="text-sm text-stone-500">${note}</span>`;
 
-            // Table Highlight
+
+            // Table Highlight (Current Slider Position)
             const rows = document.querySelectorAll('#dataTableBody tr');
             rows.forEach((row, idx) => {
-                if(idx === stepIndex) {
-                    row.classList.add('bg-emerald-50', 'border-l-4', 'border-emerald-500');
+                // Check if this row matches the slider's current step AND is not already completed
+                const isCurrent = idx === stepIndex;
+                const isCompleted = completionStatus[idx + 1] === true;
+                
+                if(isCurrent && !isCompleted) {
+                    row.classList.add('bg-stone-100', 'border-l-4', 'border-stone-500');
                     row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 } else {
-                    row.classList.remove('bg-emerald-50', 'border-l-4', 'border-emerald-500');
+                    row.classList.remove('bg-stone-100', 'border-l-4', 'border-stone-500');
                 }
             });
 
             // Update Chart Highlight (Active point)
             if(chartInstance) {
-                const colors = currentData.map((_, i) => i === stepIndex ? '#059669' : (i < stepIndex ? '#10b981' : '#e5e7eb'));
-                const pointRadii = currentData.map((_, i) => i === stepIndex ? 8 : 4);
+                const colors = currentData.map((_, i) => {
+                    const stepId = i + 1;
+                    if (i === stepIndex) return '#ef4444'; // Red for current step
+                    if (completionStatus[stepId]) return '#059669'; // Green for completed
+                    return '#e5e7eb'; // Gray for pending
+                });
+                const pointRadii = currentData.map((_, i) => i === stepIndex ? 8 : (completionStatus[i + 1] ? 6 : 4));
                 
                 chartInstance.data.datasets[0].pointBackgroundColor = colors;
                 chartInstance.data.datasets[0].pointRadius = pointRadii;
-                chartInstance.update('none'); // Update without full animation for performance
+                chartInstance.update('none'); 
             }
         }
 
@@ -332,12 +542,30 @@
             tbody.innerHTML = '';
             
             currentData.forEach((row, index) => {
+                const stepId = row.step;
+                const isCompleted = completionStatus[stepId] === true;
+                
+                let withdrawalNote = '';
+                let finalBalance = row.end;
+                
+                if (isPlanB && row.step === 10) {
+                    // Display the balance BEFORE withdrawal as the "final balance" for the step, 
+                    // and show the withdrawal amount in the note.
+                    withdrawalNote = `<br><span class="text-xs text-orange-600 font-bold">⚠️ Retiro: ${formatCurrency(row.withdrawal)}</span>`;
+                }
+
+                
+                const completionIcon = isCompleted 
+                    ? `<span class="text-emerald-600 text-xl cursor-pointer hover:opacity-75" title="Marcar como Pendiente" onclick="window.toggleStepCompletion(${stepId})">✅</span>` 
+                    : `<span class="text-stone-300 text-xl cursor-pointer hover:text-stone-500" title="Marcar como Cumplido" onclick="window.toggleStepCompletion(${stepId})">⬜</span>`;
+
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-stone-50 transition-colors";
-                // Plan B indicator for step 10 withdrawal
-                let withdrawalNote = '';
-                if (isPlanB && row.step === 10) {
-                    withdrawalNote = `<br><span class="text-xs text-orange-600 font-bold">⚠️ Retiro Plan B</span>`;
+                
+                if (isCompleted) {
+                    // Highlight completed rows
+                    tr.classList.add('bg-emerald-50', 'bg-opacity-50', 'border-l-4', 'border-emerald-500');
+                    tr.classList.remove('hover:bg-stone-50'); // Reduce hover conflict
                 }
 
                 tr.innerHTML = `
@@ -347,7 +575,8 @@
                     <td class="px-6 py-4 whitespace-nowrap text-right text-stone-600">${formatCurrency(row.bet)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center text-stone-600 font-mono">${row.odds.toFixed(2)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-emerald-600 font-medium">+${formatCurrency(row.profit)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-stone-900 font-bold">${formatCurrency(row.end)}${withdrawalNote}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-stone-900 font-bold">${formatCurrency(finalBalance)}${withdrawalNote}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">${completionIcon}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -363,10 +592,10 @@
                     datasets: [{
                         label: 'Saldo Acumulado',
                         data: currentData.map(d => d.end),
-                        borderColor: '#10b981', // emerald-500
+                        borderColor: '#10b981', 
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         borderWidth: 3,
-                        tension: 0.3, // Curve slightly
+                        tension: 0.3, 
                         fill: true,
                         pointBackgroundColor: '#10b981',
                         pointBorderColor: '#fff',
@@ -386,7 +615,16 @@
                             borderWidth: 1,
                             callbacks: {
                                 label: function(context) {
-                                    return 'Saldo: ' + formatCurrency(context.raw);
+                                    // Special handling for Step 10 if Plan B is active, 
+                                    // to show the amount before withdrawal on the chart.
+                                    const step = context.dataIndex + 1;
+                                    let displayValue = context.raw;
+                                    
+                                    if (isPlanB && step === 10 && currentData[context.dataIndex].withdrawal > 0) {
+                                        // Display the final amount *before* withdrawal on the tooltip
+                                        displayValue = currentData[context.dataIndex].end; 
+                                    }
+                                    return 'Saldo: ' + formatCurrency(displayValue);
                                 }
                             }
                         }
@@ -412,63 +650,94 @@
         function updateChartData() {
             if(!chartInstance) return;
             
-            chartInstance.data.datasets[0].data = currentData.map(d => d.end);
+            // Map data for the chart. 
+            // If Plan B is active and it's step 10, the chart should reflect the balance *after* withdrawal
+            const chartPoints = currentData.map(d => {
+                // If Plan B is active, the chart should show the end balance of 1M for step 10 (index 9)
+                if (isPlanB && d.step === 10) {
+                    return 1000000;
+                }
+                return d.end;
+            });
             
-            // If Plan B, add a dataset or marker? 
-            // For simplicity, we just update the main line to reflect the new path
-            if (isPlanB) {
-                 chartInstance.data.datasets[0].borderColor = '#f97316'; // Orange for Plan B
-                 chartInstance.data.datasets[0].backgroundColor = 'rgba(249, 115, 22, 0.1)';
-                 chartInstance.data.datasets[0].pointBackgroundColor = '#f97316';
-            } else {
-                 chartInstance.data.datasets[0].borderColor = '#10b981'; // Emerald for All-in
-                 chartInstance.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.1)';
-                 chartInstance.data.datasets[0].pointBackgroundColor = '#10b981';
-            }
+            chartInstance.data.datasets[0].data = chartPoints;
+            
+            // Update line and point colors based on Plan B status
+            const color = isPlanB ? '#f97316' : '#10b981';
+            
+            chartInstance.data.datasets[0].borderColor = color; 
+            chartInstance.data.datasets[0].backgroundColor = `rgba(${isPlanB ? '249, 115, 22' : '16, 185, 129'}, 0.1)`;
+            chartInstance.data.datasets[0].pointBackgroundColor = color;
             
             chartInstance.update();
         }
 
         function copyTable() {
-            let text = "Paso\tFecha\tSaldo Inicial\tApuesta\tCuota\tGanancia\tSaldo Final\n";
+            let text = "Paso\tFecha\tSaldo Inicial\tApuesta\tCuota\tGanancia\tSaldo Final\tCumplido\n";
             currentData.forEach(row => {
-                text += `${row.step}\t${row.date}\t${row.start}\t${row.bet}\t${row.odds}\t${row.profit}\t${row.end}\n`;
+                const isCompleted = completionStatus[row.step] === true;
+                
+                // Calculate actual final balance for copy (after withdrawal if Plan B)
+                let finalBalanceForCopy = row.end;
+                if (isPlanB && row.step === 10) {
+                    finalBalanceForCopy = 1000000; // After withdrawal
+                }
+                
+                text += `${row.step}\t${row.date}\t${row.start}\t${row.bet}\t${row.odds.toFixed(2)}\t${row.profit}\t${finalBalanceForCopy}\t${isCompleted ? 'SI' : 'NO'}\n`;
             });
+            // Using a simple custom message instead of alert()
+            console.log("Datos copiados al portapapeles. ¡Pégalos en Excel!");
             navigator.clipboard.writeText(text).then(() => {
-                alert("Datos copiados al portapapeles. ¡Pégalos en Excel!");
+                // You can add a visible message element here instead of alert()
+                console.log("Datos copiados!");
             });
         }
 
         // --- Event Listeners ---
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial Render
-            renderTable();
-            initChart();
-            updateDashboard(0); // Start at step 1 (index 0)
+            // Initial Firebase setup and data load
+            initFirebase().then(() => {
+                // Initial calculation before chart init
+                currentData = calculateNewData();
+                
+                // Initial Chart Render (must happen after data is loaded/initialized)
+                initChart();
+                renderAll(); 
+            });
 
-            // Slider Interaction
-            const slider = document.getElementById('stepSlider');
-            slider.addEventListener('input', (e) => {
+            // Step Slider Interaction
+            const stepSlider = document.getElementById('stepSlider');
+            stepSlider.addEventListener('input', (e) => {
                 const index = parseInt(e.target.value) - 1;
                 updateDashboard(index);
             });
+
+            // Odds Slider Interaction (NEW)
+            const oddsSlider = document.getElementById('oddsSlider');
+            const oddsValueDisplay = document.getElementById('oddsValueDisplay');
+            oddsSlider.addEventListener('input', (e) => {
+                // Update internal state and display format
+                baseOdds = parseFloat(e.target.value);
+                oddsValueDisplay.textContent = baseOdds.toFixed(2);
+                
+                // Recalculate all data based on new odds
+                currentData = calculateNewData();
+                renderAll(); 
+            });
+
 
             // Plan B Toggle
             const toggle = document.getElementById('planBToggle');
             toggle.addEventListener('change', (e) => {
                 isPlanB = e.target.checked;
                 
-                if (isPlanB) {
-                    currentData = calculatePlanB();
-                } else {
-                    currentData = [...baseData];
-                }
-                
-                renderTable();
-                updateChartData();
+                // Recalculate all data based on new plan B status
+                currentData = calculateNewData();
+                renderAll(); 
                 
                 // Update dashboard with currently selected slider value
+                const slider = document.getElementById('stepSlider');
                 const currentIndex = parseInt(slider.value) - 1;
                 updateDashboard(currentIndex);
             });
