@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estrategia Reto Escalera: 20k a 4M</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 350px;
+            margin: 0 auto;
+        }
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #059669;
+            cursor: pointer;
+            margin-top: -10px; 
+            box-shadow: 0 0 2px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e5e7eb;
+            border-radius: 2px;
+        }
+        .step-card.active {
+            border-color: #059669;
+            background-color: #ecfdf5;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <!-- Chosen Palette: Warm Neutrals with Emerald Green Accents. 
+         Background: Stone-50 (Calm). 
+         Primary: Emerald-600 (Money/Success). 
+         Secondary: Slate-800 (Text). 
+         Accent: Amber-500 (Warnings/Tips). -->
+
+    <!-- Application Structure Plan: 
+         1. Hero Section: Immediate summary of the goal (20k -> 4M) and timeline.
+         2. Interactive Simulator (The Core): A dashboard with a slider to move through the days/steps. 
+            This allows the user to feel the progression and see the numbers grow.
+            Includes a "Plan B" toggle to visualize the risk management strategy mentioned in the report.
+         3. Visual Analytics: A Chart.js Line chart showing the exponential growth curve.
+         4. Strategy Tactics: Cards explaining HOW to achieve the 1.50 odds (Goles, Doble Oportunidad).
+         5. Data Reference: The full CSV data presented as a clean table.
+         This structure moves from "Big Picture" -> "Interactive Play" -> "Tactical Advice" -> "Raw Data". -->
+
+    <!-- Visualization & Content Choices:
+         - Growth Chart (Line): Shows the exponential nature of the strategy. Best for showing "Money vs Time".
+         - Step Simulator: Allows user to isolate specific days and see the requirement for that specific moment.
+         - Strategy Cards: Breaks down the text advice into digestible chunks.
+         - Plan B Toggle: Directly addresses the "Gestión de Riesgo" section, allowing comparison between strategies.
+         - NO SVG / NO Mermaid: All icons are Unicode or CSS shapes. Charts are Canvas. -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">📈</span>
+                    <span class="font-bold text-xl tracking-tight text-emerald-900">Reto Escalera 4M</span>
+                </div>
+                <div class="text-sm font-medium text-stone-500 hidden sm:block">
+                    Del 26 Nov al 20 Dic 2025
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- Hero / Context -->
+        <section class="text-center max-w-3xl mx-auto space-y-4">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-stone-900">
+                De <span class="text-emerald-600">$20,000</span> a <span class="text-emerald-600">$4,000,000</span>
+            </h1>
+            <p class="text-lg text-stone-600 leading-relaxed">
+                Este panel interactivo visualiza tu plan de <strong>Interés Compuesto</strong>. 
+                Necesitas acertar <strong>13 apuestas consecutivas</strong> con cuota promedio de <strong>1.50</strong>. 
+                Usa el simulador abajo para ver tu progreso proyectado día a día.
+            </p>
+            <div class="flex justify-center gap-4 text-sm font-semibold">
+                <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">Cuota: 1.50</span>
+                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">Duración: 24 Días</span>
+                <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full">Riesgo: Alto</span>
+            </div>
+        </section>
+
+        <!-- Interactive Simulator Dashboard -->
+        <section class="bg-white rounded-2xl shadow-lg border border-stone-200 overflow-hidden">
+            <div class="p-6 md:p-8 bg-stone-900 text-white">
+                <h2 class="text-2xl font-bold mb-2 flex items-center gap-2">
+                    <span>🎛️</span> Simulador de Proyección
+                </h2>
+                <p class="text-stone-400 text-sm">Ajusta el paso actual y activa el "Plan B" para ver cómo cambia tu estrategia de retiro.</p>
+            </div>
+
+            <div class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Controls Side -->
+                <div class="lg:col-span-5 space-y-8">
+                    
+                    <!-- Slider Control -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end">
+                            <label class="font-bold text-stone-700">Paso Actual: <span id="stepDisplay" class="text-emerald-600 text-2xl">1</span>/14</label>
+                            <span id="dateDisplay" class="text-stone-500 font-mono text-sm">26-Nov</span>
+                        </div>
+                        <input type="range" id="stepSlider" min="1" max="14" value="1" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between text-xs text-stone-400">
+                            <span>Inicio</span>
+                            <span>Mitad</span>
+                            <span>Meta</span>
+                        </div>
+                    </div>
+
+                    <!-- Plan B Toggle -->
+                    <div class="bg-orange-50 border border-orange-100 p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-stone-800">🛡️ Activar Plan B (Seguro)</h3>
+                            <p class="text-xs text-stone-600 mt-1">Retirar ganancia en el Paso 10 y continuar solo con $1M.</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="planBToggle" class="sr-only peer">
+                            <div class="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                        </label>
+                    </div>
+
+                    <!-- Dynamic Stats -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                            <p class="text-xs text-emerald-700 uppercase font-bold tracking-wider">Apuesta del Día</p>
+                            <p id="betAmountDisplay" class="text-xl md:text-2xl font-bold text-stone-900 mt-1">$20,000</p>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                            <p class="text-xs text-blue-700 uppercase font-bold tracking-wider">Ganancia Neta</p>
+                            <p id="profitDisplay" class="text-xl md:text-2xl font-bold text-stone-900 mt-1">$10,000</p>
+                        </div>
+                        <div class="col-span-2 bg-stone-100 p-4 rounded-xl border border-stone-200">
+                            <p class="text-xs text-stone-500 uppercase font-bold tracking-wider">Saldo Final Proyectado (Este paso)</p>
+                            <p id="totalBalanceDisplay" class="text-3xl md:text-4xl font-extrabold text-emerald-600 mt-2">$30,000</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Chart Side -->
+                <div class="lg:col-span-7 flex flex-col justify-center">
+                    <div class="mb-4">
+                        <h3 class="font-bold text-lg text-stone-800 mb-1">Curva de Crecimiento Exponencial</h3>
+                        <p class="text-sm text-stone-500">Observa cómo el interés compuesto acelera las ganancias después del paso 8.</p>
+                    </div>
+                    <div class="chart-container bg-white rounded-xl border border-stone-100 p-2">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Strategy Section -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="col-span-1 md:col-span-3">
+                <h2 class="text-2xl font-bold text-stone-900 mb-2">Tácticas para Cuota 1.50</h2>
+                <p class="text-stone-600">Para lograr 13 aciertos seguidos, la selección del mercado es crítica. Busca estas oportunidades:</p>
+            </div>
+
+            <!-- Tactic 1 -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 hover:shadow-md transition-shadow">
+                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-xl mb-4">⚽</div>
+                <h3 class="font-bold text-lg mb-2">Más de 1.5 Goles</h3>
+                <p class="text-sm text-stone-600">Busca partidos de equipos ofensivos o defensas débiles. Necesitas solo 2 goles en el partido, sin importar quién los marque.</p>
+            </div>
+
+            <!-- Tactic 2 -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 hover:shadow-md transition-shadow">
+                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-xl mb-4">🛡️</div>
+                <h3 class="font-bold text-lg mb-2">Doble Oportunidad</h3>
+                <p class="text-sm text-stone-600">"Gana Local o Empata" (1X). Úsalo cuando un favorito juegue en casa. Reduce drásticamente el riesgo de perder.</p>
+            </div>
+
+            <!-- Tactic 3 -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 hover:shadow-md transition-shadow">
+                <div class="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center text-xl mb-4">🤝</div>
+                <h3 class="font-bold text-lg mb-2">Apuesta Sin Empate</h3>
+                <p class="text-sm text-stone-600">Si el partido termina en empate, te devuelven el dinero. No ganas, pero no pierdes la racha. Ideal para proteger el capital en pasos avanzados.</p>
+            </div>
+        </section>
+
+        <!-- Data Table Section -->
+        <section>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-stone-900">Hoja de Ruta Detallada</h2>
+                <button onclick="copyTable()" class="text-sm bg-stone-200 hover:bg-stone-300 text-stone-800 px-4 py-2 rounded-lg transition-colors font-medium">
+                    📋 Copiar Datos
+                </button>
+            </div>
+            <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-stone-200">
+                <table class="min-w-full divide-y divide-stone-200 text-sm">
+                    <thead class="bg-stone-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Paso</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Fecha</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-stone-500 uppercase tracking-wider">Saldo Inicial</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-stone-500 uppercase tracking-wider">Apuesta</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-stone-500 uppercase tracking-wider">Cuota</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-stone-500 uppercase tracking-wider">Ganancia</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-stone-500 uppercase tracking-wider">Saldo Final</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="bg-white divide-y divide-stone-200">
+                        <!-- Rows generated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer class="text-center text-stone-400 text-sm py-8 border-t border-stone-200 mt-8">
+            <p>Recuerda apostar con responsabilidad. Esta herramienta es solo para fines informativos y de simulación.</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // --- Data Configuration ---
+        // Base data from the report
+        const baseData = [
+            { step: 1, date: '26-Nov', start: 20000, bet: 20000, odds: 1.50, profit: 10000, end: 30000 },
+            { step: 2, date: '28-Nov', start: 30000, bet: 30000, odds: 1.50, profit: 15000, end: 45000 },
+            { step: 3, date: '30-Nov', start: 45000, bet: 45000, odds: 1.50, profit: 22500, end: 67500 },
+            { step: 4, date: '02-Dic', start: 67500, bet: 67500, odds: 1.50, profit: 33750, end: 101250 },
+            { step: 5, date: '04-Dic', start: 101250, bet: 101250, odds: 1.50, profit: 50625, end: 151875 },
+            { step: 6, date: '06-Dic', start: 151875, bet: 151875, odds: 1.50, profit: 75938, end: 227813 },
+            { step: 7, date: '08-Dic', start: 227813, bet: 227813, odds: 1.50, profit: 113906, end: 341719 },
+            { step: 8, date: '10-Dic', start: 341719, bet: 341719, odds: 1.50, profit: 170859, end: 512578 },
+            { step: 9, date: '12-Dic', start: 512578, bet: 512578, odds: 1.50, profit: 256289, end: 768867 },
+            { step: 10, date: '14-Dic', start: 768867, bet: 768867, odds: 1.50, profit: 384434, end: 1153301 },
+            { step: 11, date: '16-Dic', start: 1153301, bet: 1153301, odds: 1.50, profit: 576650, end: 1729951 },
+            { step: 12, date: '18-Dic', start: 1729951, bet: 1729951, odds: 1.50, profit: 864976, end: 2594927 },
+            { step: 13, date: '19-Dic', start: 2594927, bet: 2594927, odds: 1.50, profit: 1297463, end: 3892390 },
+            { step: 14, date: '20-Dic', start: 3892390, bet: 3892390, odds: 1.50, profit: 1946195, end: 5838585 }
+        ];
+
+        // State variables
+        let currentData = [...baseData];
+        let isPlanB = false;
+        let chartInstance = null;
+
+        // --- Core Logic ---
+
+        function calculatePlanB() {
+            // Plan B Logic:
+            // Steps 1-10 are same.
+            // At end of Step 10, we have 1,153,301.
+            // We withdraw 153,301 (approx) to keep 1,000,000 flat for Step 11.
+            // We continue compounding from 1,000,000.
+            
+            const newData = JSON.parse(JSON.stringify(baseData)); // Deep copy
+            
+            // Recalculate from step 11 onwards
+            let currentBalance = 1000000; // Reset balance after withdrawal at step 10
+            
+            for (let i = 10; i < newData.length; i++) { // Index 10 is Step 11
+                newData[i].start = currentBalance;
+                newData[i].bet = currentBalance;
+                newData[i].profit = currentBalance * 0.5; // (1.50 - 1)
+                newData[i].end = currentBalance + newData[i].profit;
+                currentBalance = newData[i].end;
+            }
+            
+            return newData;
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+        }
+
+        // --- UI Updates ---
+
+        function updateDashboard(stepIndex) {
+            const dataPoint = currentData[stepIndex];
+            
+            // Text Updates
+            document.getElementById('stepDisplay').textContent = dataPoint.step;
+            document.getElementById('dateDisplay').textContent = dataPoint.date;
+            document.getElementById('betAmountDisplay').textContent = formatCurrency(dataPoint.bet);
+            document.getElementById('profitDisplay').textContent = formatCurrency(dataPoint.profit);
+            document.getElementById('totalBalanceDisplay').textContent = formatCurrency(dataPoint.end);
+
+            // Table Highlight
+            const rows = document.querySelectorAll('#dataTableBody tr');
+            rows.forEach((row, idx) => {
+                if(idx === stepIndex) {
+                    row.classList.add('bg-emerald-50', 'border-l-4', 'border-emerald-500');
+                    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    row.classList.remove('bg-emerald-50', 'border-l-4', 'border-emerald-500');
+                }
+            });
+
+            // Update Chart Highlight (Active point)
+            if(chartInstance) {
+                const colors = currentData.map((_, i) => i === stepIndex ? '#059669' : (i < stepIndex ? '#10b981' : '#e5e7eb'));
+                const pointRadii = currentData.map((_, i) => i === stepIndex ? 8 : 4);
+                
+                chartInstance.data.datasets[0].pointBackgroundColor = colors;
+                chartInstance.data.datasets[0].pointRadius = pointRadii;
+                chartInstance.update('none'); // Update without full animation for performance
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+            
+            currentData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-stone-50 transition-colors";
+                // Plan B indicator for step 10 withdrawal
+                let withdrawalNote = '';
+                if (isPlanB && row.step === 10) {
+                    withdrawalNote = `<br><span class="text-xs text-orange-600 font-bold">⚠️ Retiro Plan B</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-stone-900 font-medium">${row.step}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-stone-500">${row.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-stone-600">${formatCurrency(row.start)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-stone-600">${formatCurrency(row.bet)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-stone-600 font-mono">${row.odds.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-emerald-600 font-medium">+${formatCurrency(row.profit)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-stone-900 font-bold">${formatCurrency(row.end)}${withdrawalNote}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: currentData.map(d => `Paso ${d.step}`),
+                    datasets: [{
+                        label: 'Saldo Acumulado',
+                        data: currentData.map(d => d.end),
+                        borderColor: '#10b981', // emerald-500
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3, // Curve slightly
+                        fill: true,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1c1917',
+                            bodyColor: '#4b5563',
+                            borderColor: '#e5e7eb',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Saldo: ' + formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: '#f3f4f6' },
+                            ticks: {
+                                callback: function(value) {
+                                    return value >= 1000000 ? (value/1000000) + 'M' : (value/1000) + 'k';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartData() {
+            if(!chartInstance) return;
+            
+            chartInstance.data.datasets[0].data = currentData.map(d => d.end);
+            
+            // If Plan B, add a dataset or marker? 
+            // For simplicity, we just update the main line to reflect the new path
+            if (isPlanB) {
+                 chartInstance.data.datasets[0].borderColor = '#f97316'; // Orange for Plan B
+                 chartInstance.data.datasets[0].backgroundColor = 'rgba(249, 115, 22, 0.1)';
+                 chartInstance.data.datasets[0].pointBackgroundColor = '#f97316';
+            } else {
+                 chartInstance.data.datasets[0].borderColor = '#10b981'; // Emerald for All-in
+                 chartInstance.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                 chartInstance.data.datasets[0].pointBackgroundColor = '#10b981';
+            }
+            
+            chartInstance.update();
+        }
+
+        function copyTable() {
+            let text = "Paso\tFecha\tSaldo Inicial\tApuesta\tCuota\tGanancia\tSaldo Final\n";
+            currentData.forEach(row => {
+                text += `${row.step}\t${row.date}\t${row.start}\t${row.bet}\t${row.odds}\t${row.profit}\t${row.end}\n`;
+            });
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Datos copiados al portapapeles. ¡Pégalos en Excel!");
+            });
+        }
+
+        // --- Event Listeners ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial Render
+            renderTable();
+            initChart();
+            updateDashboard(0); // Start at step 1 (index 0)
+
+            // Slider Interaction
+            const slider = document.getElementById('stepSlider');
+            slider.addEventListener('input', (e) => {
+                const index = parseInt(e.target.value) - 1;
+                updateDashboard(index);
+            });
+
+            // Plan B Toggle
+            const toggle = document.getElementById('planBToggle');
+            toggle.addEventListener('change', (e) => {
+                isPlanB = e.target.checked;
+                
+                if (isPlanB) {
+                    currentData = calculatePlanB();
+                } else {
+                    currentData = [...baseData];
+                }
+                
+                renderTable();
+                updateChartData();
+                
+                // Update dashboard with currently selected slider value
+                const currentIndex = parseInt(slider.value) - 1;
+                updateDashboard(currentIndex);
+            });
+        });
+
+    </script>
+</body>
+</html>
